@@ -1,0 +1,252 @@
+{
+    "versions": [
+        {
+            "major": "9",
+            "minor": "2",
+            "patch": "0",
+            "revision": "002893",
+            "variants": [
+                {
+                    "name": "spe",
+                    "version": {
+                        "major": "6",
+                        "minor": "0",
+                        "patch": "0",
+                        "revision": "0"
+                    }
+                },
+                {
+                    "name": "sxa",
+                    "version": {
+                        "major": "1",
+                        "minor": "9",
+                        "patch": "0",
+                        "revision": "190528"
+                    }
+                }
+            ]
+        },
+        {
+            "major": "9",
+            "minor": "1",
+            "patch": "1",
+            "revision": "002459",
+            "variants": [
+                {
+                    "name": "spe",
+                    "version": {
+                        "major": "5",
+                        "minor": "0",
+                        "patch": "0",
+                        "revision": "0"
+                    }
+                },
+                {
+                    "name": "sxa",
+                    "version": {
+                        "major": "1",
+                        "minor": "8",
+                        "patch": "1",
+                        "revision": "190319"
+                    }
+                }
+            ]
+        },
+        {
+            "major": "9",
+            "minor": "1",
+            "patch": "0",
+            "revision": "001564",
+            "variants": []
+        },
+        {
+            "major": "9",
+            "minor": "0",
+            "patch": "2",
+            "revision": "180604",
+            "variants": []
+        }
+    ],
+    "dependencies": [
+        {
+            "name": "assets",
+            "os": [
+                "nanoserver"
+            ],
+            "versions": [
+                "*"
+            ]
+        }
+    ],
+    "topologies": [
+        {
+            "name": "xm",
+            "roles": [
+                {
+                    "name": "cm",
+                    "role-define": [
+                        "ContentManagement",
+                        "Indexing"
+                    ],
+                    "os": [
+                        "windowsserver"
+                    ]
+                },
+                {
+                    "name": "cd",
+                    "role-define": [
+                        "ContentDelivery"
+                    ],
+                    "os": [
+                        "windowsserver"
+                    ]
+                },
+                {
+                    "name": "solr",
+                    "role-define": [],
+                    "os": [
+                        "nanoserver",
+                        "linux"
+                    ]
+                },
+                {
+                    "name": "sql",
+                    "role-define": [],
+                    "os": [
+                        "windowsserver",
+                        "linux"
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "xp",
+            "roles": [
+                {
+                    "name": "standalone",
+                    "role-define": [
+                        "Standalone"
+                    ],
+                    "os": [
+                        "windowsserver"
+                    ]
+                },
+                {
+                    "name": "cd",
+                    "role-define": [
+                        "ContentDelivery"
+                    ],
+                    "os": [
+                        "windowsserver"
+                    ]
+                },
+                {
+                    "name": "solr",
+                    "role-define": [],
+                    "os": [
+                        "nanoserver",
+                        "linux"
+                    ]
+                },
+                {
+                    "name": "sql",
+                    "role-define": [],
+                    "os": [
+                        "windowsserver",
+                        "linux"
+                    ]
+                },
+                {
+                    "name": "xconnect",
+                    "role-define": [],
+                    "os": [
+                        "windowsserver"
+                    ]
+                },
+                {
+                    "name": "xconnect-indexworker",
+                    "role-define": [],
+                    "os": [
+                        "windowsserver"
+                    ]
+                },
+                {
+                    "name": "xconnect-automationengine",
+                    "role-define": [],
+                    "os": [
+                        "windowsserver"
+                    ]
+                }
+            ]
+        }
+    ],
+    "variants": [
+        {
+            "name": "spe",
+            "topologies": [
+                {
+                    "name": "xm",
+                    "roles": [
+                        "cm",
+                        "sql"
+                    ]
+                },
+                {
+                    "name": "xp",
+                    "roles": [
+                        "standalone",
+                        "sql"
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "sxa",
+            "topologies": [
+                {
+                    "name": "xm",
+                    "roles": [
+                        "cm",
+                        "cd",
+                        "sql"
+                    ]
+                },
+                {
+                    "name": "xp",
+                    "roles": [
+                        "standalone",
+                        "cd",
+                        "sql"
+                    ]
+                }
+            ]
+        }
+    ],
+    "platforms": [
+        {
+            "name": "windowsservercore-1903",
+            "os": "windowsserver",
+            "engine": "windows"
+        },
+        {
+            "name": "nanoserver-1903",
+            "os": "nanoserver",
+            "engine": "windows"
+        },
+        {
+            "name": "windowsservercore-ltsc2019",
+            "os": "windowsserver",
+            "engine": "windows"
+        },
+        {
+            "name": "nanoserver-1809",
+            "os": "nanoserver",
+            "engine": "windows"
+        },
+        {
+            "name": "linux",
+            "os": "linux",
+            "engine": "linux"
+        }
+    ]
+}
