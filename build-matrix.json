@@ -187,15 +187,37 @@
                 {
                     "name": "xm",
                     "roles": [
-                        "cm",
-                        "sql"
+                        {
+                            "name": "cm",
+                            "os": [
+                                "windowsserver"
+                            ]
+                        },
+                        {
+                            "name": "sql",
+                            "os": [
+                                "windowsserver",
+                                "linux"
+                            ]
+                        }
                     ]
                 },
                 {
                     "name": "xp",
                     "roles": [
-                        "standalone",
-                        "sql"
+                        {
+                            "name": "standalone",
+                            "os": [
+                                "windowsserver"
+                            ]
+                        },
+                        {
+                            "name": "sql",
+                            "os": [
+                                "windowsserver",
+                                "linux"
+                            ]
+                        }
                     ]
                 }
             ]
@@ -206,17 +228,49 @@
                 {
                     "name": "xm",
                     "roles": [
-                        "cm",
-                        "cd",
-                        "sql"
+                        {
+                            "name": "cm",
+                            "os": [
+                                "windowsserver"
+                            ]
+                        },
+                        {
+                            "name": "cd",
+                            "os": [
+                                "windowsserver"
+                            ]
+                        },
+                        {
+                            "name": "sql",
+                            "os": [
+                                "windowsserver",
+                                "linux"
+                            ]
+                        }
                     ]
                 },
                 {
                     "name": "xp",
                     "roles": [
-                        "standalone",
-                        "cd",
-                        "sql"
+                        {
+                            "name": "standalone",
+                            "os": [
+                                "windowsserver"
+                            ]
+                        },
+                        {
+                            "name": "cd",
+                            "os": [
+                                "windowsserver"
+                            ]
+                        },
+                        {
+                            "name": "sql",
+                            "os": [
+                                "windowsserver",
+                                "linux"
+                            ]
+                        }
                     ]
                 }
             ]
