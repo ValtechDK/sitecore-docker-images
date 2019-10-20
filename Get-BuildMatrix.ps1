@@ -47,7 +47,6 @@ $versions = $data.versions | ForEach-Object {
                 Write-Output (New-Object PSObject -Property @{
                         Type            = "platform";
                         SitecoreVersion = "$($version.major).$($version.minor).$($version.patch)"
-                        Name            = $role.name;
                         VariantVersion  = $null;
                         Topology        = $topology.name;
                         Role            = $role.name;
