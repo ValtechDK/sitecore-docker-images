@@ -13,7 +13,8 @@
                         "minor": "0",
                         "patch": "0",
                         "revision": "0"
-                    }
+                    },
+                    "requires": []
                 },
                 {
                     "name": "sxa",
@@ -22,7 +23,12 @@
                         "minor": "9",
                         "patch": "0",
                         "revision": "190528"
-                    }
+                    },
+                    "requires": [
+                        {
+                            "name": "spe"
+                        }
+                    ]
                 }
             ]
         },
@@ -39,7 +45,8 @@
                         "minor": "0",
                         "patch": "0",
                         "revision": "0"
-                    }
+                    },
+                    "requires": []
                 },
                 {
                     "name": "sxa",
@@ -48,7 +55,12 @@
                         "minor": "8",
                         "patch": "1",
                         "revision": "190319"
-                    }
+                    },
+                    "requires": [
+                        {
+                            "name": "spe"
+                        }
+                    ]
                 }
             ]
         },
@@ -71,10 +83,8 @@
         {
             "name": "assets",
             "os": [
-                "nanoserver"
-            ],
-            "versions": [
-                "*"
+                "nanoserver",
+                "linux"
             ]
         }
     ],
@@ -187,37 +197,15 @@
                 {
                     "name": "xm",
                     "roles": [
-                        {
-                            "name": "cm",
-                            "os": [
-                                "windowsserver"
-                            ]
-                        },
-                        {
-                            "name": "sql",
-                            "os": [
-                                "windowsserver",
-                                "linux"
-                            ]
-                        }
+                        "cm",
+                        "sql"
                     ]
                 },
                 {
                     "name": "xp",
                     "roles": [
-                        {
-                            "name": "standalone",
-                            "os": [
-                                "windowsserver"
-                            ]
-                        },
-                        {
-                            "name": "sql",
-                            "os": [
-                                "windowsserver",
-                                "linux"
-                            ]
-                        }
+                        "standalone",
+                        "sql"
                     ]
                 }
             ]
@@ -228,49 +216,17 @@
                 {
                     "name": "xm",
                     "roles": [
-                        {
-                            "name": "cm",
-                            "os": [
-                                "windowsserver"
-                            ]
-                        },
-                        {
-                            "name": "cd",
-                            "os": [
-                                "windowsserver"
-                            ]
-                        },
-                        {
-                            "name": "sql",
-                            "os": [
-                                "windowsserver",
-                                "linux"
-                            ]
-                        }
+                        "cm",
+                        "cd",
+                        "sql"
                     ]
                 },
                 {
                     "name": "xp",
                     "roles": [
-                        {
-                            "name": "standalone",
-                            "os": [
-                                "windowsserver"
-                            ]
-                        },
-                        {
-                            "name": "cd",
-                            "os": [
-                                "windowsserver"
-                            ]
-                        },
-                        {
-                            "name": "sql",
-                            "os": [
-                                "windowsserver",
-                                "linux"
-                            ]
-                        }
+                        "standalone",
+                        "cd",
+                        "sql"
                     ]
                 }
             ]
@@ -280,27 +236,32 @@
         {
             "name": "windowsservercore-1903",
             "os": "windowsserver",
-            "engine": "windows"
+            "engine": "windows",
+            "build": "1903"
         },
         {
             "name": "nanoserver-1903",
             "os": "nanoserver",
-            "engine": "windows"
+            "engine": "windows",
+            "build": "1903"
         },
         {
             "name": "windowsservercore-ltsc2019",
             "os": "windowsserver",
-            "engine": "windows"
+            "engine": "windows",
+            "build": "1809"
         },
         {
             "name": "nanoserver-1809",
             "os": "nanoserver",
-            "engine": "windows"
+            "engine": "windows",
+            "build": "1809"
         },
         {
             "name": "linux",
             "os": "linux",
-            "engine": "linux"
+            "engine": "linux",
+            "build": null
         }
     ]
 }
