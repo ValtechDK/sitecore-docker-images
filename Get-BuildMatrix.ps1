@@ -3,33 +3,34 @@ $data = Get-Content -Path (Join-Path $PSScriptRoot ".\build-matrix.json") | Conv
 ####### HUSK build matrix er kun FORSLAG til hvad der KUNNE være muligt at bygges!
 
 # Producer
-# TODO: Handle build dependencies / order
-# TODO: OpenJDK, mssql-2017, certificates skal buildes FOR SIG SELV, tror ikke de er en del af the matix? De er ikke versionered. Men måske de kunne være en ting såsom "dependencies" eller deps blev flyttet?
+# TODO: ...
 
 # Consumer
 # TODO: Path skal ikke være her, det er kun til test. Det skal være på consumer siden og checkke om der findes noget der kan bygges.
 # TODO: Hvad med 9.0.2/9.1.0 Linux SQL, hvordan filtres det væk på consumer siden?
 # TODO: Hvordan merger vi path for tags der bygges ud fra samme folder men med forskellige paramter?
 
-$data.versions | ForEach-Object {
+# NOTES: "requires"/dependencies skal udledes af build-args fra build.json
+
+$versions = $data.versions | ForEach-Object {
     $version = $_
 
-    $data.dependencies | ForEach-Object {
+    $version.dependencies | ForEach-Object {
         $dependency = $_
 
         $data.platforms | Where-Object { $dependency.os -contains $_.os } | ForEach-Object {
             $platform = $_
 
             Write-Output (New-Object PSObject -Property @{
+                    Type            = "dependency";
                     SitecoreVersion = "$($version.major).$($version.minor).$($version.patch)";
-                    VariantName     = $null;
+                    Name            = $dependency.name;
                     VariantVersion  = $null;
                     Topology        = $null;
                     Role            = $null;
                     Platform        = "$($platform.name)";
                     DockerEngine    = $platform.engine;
                     Tag             = "sitecore-$($dependency.name):$($version.major).$($version.minor).$($version.patch)-$($platform.name)";
-                    Requirements    = @();
                 })
         }
     }
@@ -44,15 +45,15 @@ $data.versions | ForEach-Object {
                 $platform = $_
 
                 Write-Output (New-Object PSObject -Property @{
+                        Type            = "platform";
                         SitecoreVersion = "$($version.major).$($version.minor).$($version.patch)"
-                        VariantName     = $null;
+                        Name            = $role.name;
                         VariantVersion  = $null;
                         Topology        = $topology.name;
                         Role            = $role.name;
                         Platform        = $platform.name;
                         DockerEngine    = $platform.engine;
                         Tag             = "sitecore-$($topology.name)-$($role.name):$($version.major).$($version.minor).$($version.patch)-$($platform.name)";
-                        Requirements    = @("assets");
                     })
             }
         }
@@ -73,27 +74,43 @@ $data.versions | ForEach-Object {
 
                 $data.platforms | Where-Object { $roleReference.os -contains $_.os } | ForEach-Object {
                     $platform = $_
-                    $requirements = @("assets")
-
-                    $variant.requires | ForEach-Object {
-                        $required = $_
-
-                        $requirements += $required.name
-                    }
 
                     Write-Output (New-Object PSObject -Property @{
+                            Type            = "variant";
                             SitecoreVersion = "$($version.major).$($version.minor).$($version.patch)"
-                            VariantName     = $variant.name;
+                            Name            = $variant.name;
                             VariantVersion  = "$($variant.version.major).$($variant.version.minor).$($variant.version.patch)";
                             Topology        = $topologyReference.name;
                             Role            = $roleReference.name;
                             Platform        = $platform.name;
                             DockerEngine    = $platform.engine;
                             Tag             = "sitecore-$($topologyReference.name)-$($variant.name)-$($roleReference.name):$($version.major).$($version.minor).$($version.patch)-$($platform.name)";
-                            Requirements    = $requirements;
                         })
                 }
             }
         }
     }
-} | Sort-Object -Property SitecoreVersion, DockerEngine, Tag | Format-Table -Property SitecoreVersion, VariantVersion, Topology, VariantName, Role, Platform, DockerEngine, Requirements, Tag
+}
+
+$dependencies = $data.dependencies | ForEach-Object {
+    $dependency = $_
+
+    $data.platforms | Where-Object { $dependency.os -contains $_.os } | ForEach-Object {
+        $platform = $_
+
+        Write-Output (New-Object PSObject -Property @{
+                Type            = "dependency";
+                SitecoreVersion = $null;
+                Name            = $dependency.name;
+                VariantVersion  = $null;
+                Topology        = $null;
+                Role            = $null;
+                Platform        = "$($platform.name)";
+                DockerEngine    = $platform.engine;
+                Tag             = "sitecore-$($dependency.name):????-$($platform.name)";
+            })
+    }
+}
+
+$matrix = [array]$versions, [array]$dependencies
+$matrix | Sort-Object -Property Type, SitecoreVersion, Platform, Topology, Role | Format-Table -Property SitecoreVersion, VariantVersion, Type, Name, Topology, Role, Platform, DockerEngine, Tag

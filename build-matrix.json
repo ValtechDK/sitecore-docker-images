@@ -13,8 +13,7 @@
                         "minor": "0",
                         "patch": "0",
                         "revision": "0"
-                    },
-                    "requires": []
+                    }
                 },
                 {
                     "name": "sxa",
@@ -23,11 +22,15 @@
                         "minor": "9",
                         "patch": "0",
                         "revision": "190528"
-                    },
-                    "requires": [
-                        {
-                            "name": "spe"
-                        }
+                    }
+                }
+            ],
+            "dependencies": [
+                {
+                    "name": "assets",
+                    "os": [
+                        "nanoserver",
+                        "linux"
                     ]
                 }
             ]
@@ -45,8 +48,7 @@
                         "minor": "0",
                         "patch": "0",
                         "revision": "0"
-                    },
-                    "requires": []
+                    }
                 },
                 {
                     "name": "sxa",
@@ -55,11 +57,15 @@
                         "minor": "8",
                         "patch": "1",
                         "revision": "190319"
-                    },
-                    "requires": [
-                        {
-                            "name": "spe"
-                        }
+                    }
+                }
+            ],
+            "dependencies": [
+                {
+                    "name": "assets",
+                    "os": [
+                        "nanoserver",
+                        "linux"
                     ]
                 }
             ]
@@ -69,22 +75,51 @@
             "minor": "1",
             "patch": "0",
             "revision": "001564",
-            "variants": []
+            "variants": [],
+            "dependencies": [
+                {
+                    "name": "assets",
+                    "os": [
+                        "nanoserver",
+                        "linux"
+                    ]
+                }
+            ]
         },
         {
             "major": "9",
             "minor": "0",
             "patch": "2",
             "revision": "180604",
-            "variants": []
+            "variants": [],
+            "dependencies": [
+                {
+                    "name": "assets",
+                    "os": [
+                        "nanoserver",
+                        "linux"
+                    ]
+                }
+            ]
         }
     ],
     "dependencies": [
         {
-            "name": "assets",
+            "name": "certificates",
             "os": [
-                "nanoserver",
-                "linux"
+                "nanoserver"
+            ]
+        },
+        {
+            "name": "mssql-developer",
+            "os": [
+                "windowsserver"
+            ]
+        },
+        {
+            "name": "openjdk",
+            "os": [
+                "nanoserver"
             ]
         }
     ],
