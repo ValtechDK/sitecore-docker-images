@@ -23,15 +23,15 @@ $versions = $data.versions | ForEach-Object {
 
             Write-Output (New-Object PSObject -Property @{
                     Type            = "dependency";
-                    SitecoreVersion = "$($version.major).$($version.minor).$($version.patch)";
+                    SitecoreVersion = (New-Object PSObject -Property @{ "Major" = $version.major; "Minor" = $version.minor; "Patch" = $version.patch; "Revision" = $version.revision; });
                     Repository      = $repository;
                     Key             = $dependency.name;
-                    VariantVersion  = $null;
+                    VariantVersion  = (New-Object PSObject -Property @{ "Major" = "0"; "Minor" = "0"; "Patch" = "0"; "Revision" = "0" });
                     Topology        = $null;
                     Role            = $null;
                     Platform        = "$($platform.name)";
                     DockerEngine    = $platform.engine;
-                    Tag             = "$($name):$($version.major).$($version.minor).$($version.patch)-$($platform.name)";
+                    Tag             = "$($repository):$($version.major).$($version.minor).$($version.patch)-$($platform.name)";
                 })
         }
     }
@@ -48,15 +48,15 @@ $versions = $data.versions | ForEach-Object {
 
                 Write-Output (New-Object PSObject -Property @{
                         Type            = "platform";
-                        SitecoreVersion = "$($version.major).$($version.minor).$($version.patch)"
+                        SitecoreVersion = (New-Object PSObject -Property @{ "Major" = $version.major; "Minor" = $version.minor; "Patch" = $version.patch; "Revision" = $version.revision; });
                         Repository      = $repository;
                         Key             = $null;
-                        VariantVersion  = $null;
+                        VariantVersion  = (New-Object PSObject -Property @{ "Major" = "0"; "Minor" = "0"; "Patch" = "0"; "Revision" = "0" });
                         Topology        = $topology.name;
                         Role            = $role.name;
                         Platform        = $platform.name;
                         DockerEngine    = $platform.engine;
-                        Tag             = "$($name):$($version.major).$($version.minor).$($version.patch)-$($platform.name)";
+                        Tag             = "$($repository):$($version.major).$($version.minor).$($version.patch)-$($platform.name)";
                     })
             }
         }
@@ -81,15 +81,15 @@ $versions = $data.versions | ForEach-Object {
 
                     Write-Output (New-Object PSObject -Property @{
                             Type            = "variant";
-                            SitecoreVersion = "$($version.major).$($version.minor).$($version.patch)"
+                            SitecoreVersion = (New-Object PSObject -Property @{ "Major" = $version.major; "Minor" = $version.minor; "Patch" = $version.patch; "Revision" = $version.revision; });
                             Repository      = $repository;
                             Key             = $variant.name;
-                            VariantVersion  = "$($variant.version.major).$($variant.version.minor).$($variant.version.patch)";
+                            VariantVersion  = (New-Object PSObject -Property @{ "Major" = $variant.version.major; "Minor" = $variant.version.minor; "Patch" = $variant.version.patch; "Revision" = $variant.version.revision; }); ;
                             Topology        = $topologyReference.name;
                             Role            = $roleReference.name;
                             Platform        = $platform.name;
                             DockerEngine    = $platform.engine;
-                            Tag             = "$($name):$($version.major).$($version.minor).$($version.patch)-$($platform.name)";
+                            Tag             = "$($repository):$($version.major).$($version.minor).$($version.patch)-$($platform.name)";
                         })
                 }
             }
@@ -106,10 +106,10 @@ $dependencies = $data.dependencies | ForEach-Object {
 
         Write-Output (New-Object PSObject -Property @{
                 Type            = "dependency";
-                SitecoreVersion = $null;
+                SitecoreVersion = (New-Object PSObject -Property @{ "Major" = "0"; "Minor" = "0"; "Patch" = "0"; "Revision" = "0" });
                 Repository      = $repository;
                 Key             = $dependency.name;
-                VariantVersion  = $null;
+                VariantVersion  = (New-Object PSObject -Property @{ "Major" = "0"; "Minor" = "0"; "Patch" = "0"; "Revision" = "0" });
                 Topology        = $null;
                 Role            = $null;
                 Platform        = "$($platform.name)";
@@ -119,5 +119,91 @@ $dependencies = $data.dependencies | ForEach-Object {
     }
 }
 
-$matrix = [array]$versions, [array]$dependencies
-$matrix | Sort-Object -Property Type, SitecoreVersion, Platform, Topology, Role | Format-Table -Property SitecoreVersion, VariantVersion, Type, Key, Repository, Topology, Role, Platform, DockerEngine, Tag
+$matrix = [System.Collections.ArrayList]@()
+$matrix.AddRange($versions)
+$matrix.AddRange($dependencies)
+
+#$matrix | Sort-Object -Property Type, SitecoreVersion, Platform, Topology, Role | Format-Table -Property SitecoreVersion, VariantVersion, Type, Key, Repository, Topology, Role, Platform, DockerEngine, Tag
+
+$prospects = $matrix | Where-Object { ($_.SitecoreVersion.Major -eq "9" -and $_.SitecoreVersion.Minor -eq "2") } | ForEach-Object {
+    $prospect = $_
+
+    $versionFolders = @(
+        ("{0}.{1}.{2}" -f $prospect.SitecoreVersion.Major, $prospect.SitecoreVersion.Minor, $prospect.SitecoreVersion.Patch),
+        ("{0}.{1}.x" -f $prospect.SitecoreVersion.Major, $prospect.SitecoreVersion.Minor),
+        ("{0}.x.x" -f $prospect.SitecoreVersion.Major)
+    )
+
+    $fixedRepository = $prospect.Repository
+
+    # TODO: Remove when Windows SQL images are renamed from "-sqldev" to "-sql"
+    if ($prospect.Platform -ne "linux" -and $fixedRepository -like "*-sql")
+    {
+        $fixedRepository = $fixedRepository.Replace("-sql", "-sqldev")
+    }
+
+    $repositoryFolders = @(
+        ("{0}" -f $fixedRepository),
+        ("sitecore-{0}-{1}" -f $prospect.Topology, $prospect.Key),
+        ("sitecore-{0}" -f $prospect.Topology)
+    )
+
+    $found = $false
+
+    :Outer foreach ($repositoryFolder in $repositoryFolders)
+    {
+        $repositoryPaths = @()
+
+        $versionFolders | ForEach-Object {
+            $versionFolder = $_
+
+            $repositoryPaths += Join-Path $PSScriptRoot ("\{0}\{1}\{2}" -f $prospect.DockerEngine, $versionFolder, $repositoryFolder)
+        }
+
+        foreach ($repositoryPath in $repositoryPaths)
+        {
+            if (Test-Path -Path $repositoryPath -PathType Container)
+            {
+                $found = $true
+
+                Write-Output (New-Object PSObject -Property @{
+                        Path     = $repositoryPath;
+                        Prospect = $prospect;
+                    })
+
+                break :Outer
+            }
+        }
+    }
+
+    if (!$found)
+    {
+        Write-Output (New-Object PSObject -Property @{
+                Path     = $null;
+                Prospect = $prospect;
+            })
+    }
+}
+
+# here we have prospects, most with context folder that can be build
+$prospects | Format-Table -Property Path, @{ Name = "Tag"; Expression = { $_.Prospect.Tag } }, Prospect
+
+# find context folders NOT covered
+(Join-Path $PSScriptRoot "\windows"), (Join-Path $PSScriptRoot "\linux") | ForEach-Object {
+    $enginePath = $_
+
+    Get-ChildItem -Path $enginePath -Filter "Dockerfile" -Recurse | ForEach-Object {
+        $contextPath = $_.Directory.FullName
+        $foundProspect = ($prospects | Where-Object { $_.Path -eq $contextPath }).Length -gt 0
+
+        if ($foundProspect)
+        {
+            Write-Host "$contextPath" -ForegroundColor Gray
+        }
+        else
+        {
+            Write-Host "NOT FOUND: $contextPath" -ForegroundColor Red
+        }
+
+    }
+}
