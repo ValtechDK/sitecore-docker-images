@@ -105,19 +105,19 @@
     ],
     "dependencies": [
         {
-            "name": "certificates",
+            "name": "sitecore-certificates",
             "os": [
                 "nanoserver"
             ]
         },
         {
-            "name": "mssql-developer",
+            "name": "mssql-developer-2017",
             "os": [
                 "windowsserver"
             ]
         },
         {
-            "name": "openjdk",
+            "name": "sitecore-openjdk",
             "os": [
                 "nanoserver"
             ]

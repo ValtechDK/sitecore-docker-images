@@ -1,15 +1,15 @@
 $data = Get-Content -Path (Join-Path $PSScriptRoot ".\build-matrix.json") | ConvertFrom-Json
 
-####### HUSK build matrix er kun FORSLAG til hvad der KUNNE være muligt at bygges!
-
 # Producer
 # TODO: ...
 
 # Consumer
-# TODO: Path skal ikke være her, det er kun til test. Det skal være på consumer siden og checkke om der findes noget der kan bygges.
 # TODO: Hvordan merger vi path for tags der bygges ud fra samme folder men med forskellige paramter?
 
-# NOTES: "requires"/dependencies/build order skal udledes af build-args fra build.json
+# Other
+# NOTE: "requires"/dependencies/build order skal udledes af build-args fra build.json
+# TODO: Rename "mssql-developer-2017" to somthing prefixed with "sitecore-"?
+# TODO: Rename "-sqldev" to "-sql" on Windows OR specify both in the matrix.
 
 $versions = $data.versions | ForEach-Object {
     $version = $_
@@ -102,7 +102,7 @@ $dependencies = $data.dependencies | ForEach-Object {
 
     $data.platforms | Where-Object { $dependency.os -contains $_.os } | ForEach-Object {
         $platform = $_
-        $repository = "sitecore-$($dependency.name)"
+        $repository = $dependency.name
 
         Write-Output (New-Object PSObject -Property @{
                 Type            = "dependency";
@@ -123,9 +123,10 @@ $matrix = [System.Collections.ArrayList]@()
 $matrix.AddRange($versions)
 $matrix.AddRange($dependencies)
 
-#$matrix | Sort-Object -Property Type, SitecoreVersion, Platform, Topology, Role | Format-Table -Property SitecoreVersion, VariantVersion, Type, Key, Repository, Topology, Role, Platform, DockerEngine, Tag
+# print everything
+$matrix | Sort-Object -Property Type, SitecoreVersion, Platform, Topology, Role | Format-Table -Property SitecoreVersion, VariantVersion, Type, Key, Repository, Topology, Role, Platform, DockerEngine, Tag
 
-$prospects = $matrix | Where-Object { ($_.SitecoreVersion.Major -eq "9" -and $_.SitecoreVersion.Minor -eq "2") } | ForEach-Object {
+$prospects = $matrix | ForEach-Object {
     $prospect = $_
 
     $versionFolders = @(
@@ -134,16 +135,16 @@ $prospects = $matrix | Where-Object { ($_.SitecoreVersion.Major -eq "9" -and $_.
         ("{0}.x.x" -f $prospect.SitecoreVersion.Major)
     )
 
-    $fixedRepository = $prospect.Repository
+    $repositoryName = $prospect.Repository
 
-    # TODO: Remove when Windows SQL images are renamed from "-sqldev" to "-sql"
-    if ($prospect.Platform -ne "linux" -and $fixedRepository -like "*-sql")
+    # TODO: Remove when -SQLDEV has been renamed to -SQL or both specified in the matrix
+    if ($prospect.Platform -ne "linux" -and $prospect.Repository -like "*-sql")
     {
-        $fixedRepository = $fixedRepository.Replace("-sql", "-sqldev")
+        $repositoryName = $prospect.Repository.Replace("-sql", "-sqldev");
     }
 
     $repositoryFolders = @(
-        ("{0}" -f $fixedRepository),
+        ("{0}" -f $repositoryName),
         ("sitecore-{0}-{1}" -f $prospect.Topology, $prospect.Key),
         ("sitecore-{0}" -f $prospect.Topology)
     )
@@ -154,11 +155,15 @@ $prospects = $matrix | Where-Object { ($_.SitecoreVersion.Major -eq "9" -and $_.
     {
         $repositoryPaths = @()
 
+        # TODO: Not sure that I like that the folders are this "static". Try to recursively lookup repository folder first in version folders then in the rest...
         $versionFolders | ForEach-Object {
             $versionFolder = $_
 
             $repositoryPaths += Join-Path $PSScriptRoot ("\{0}\{1}\{2}" -f $prospect.DockerEngine, $versionFolder, $repositoryFolder)
         }
+
+        $repositoryPaths += Join-Path $PSScriptRoot ("\{0}\dependencies\{1}" -f $prospect.DockerEngine, $repositoryFolder)
+        # /TODO
 
         foreach ($repositoryPath in $repositoryPaths)
         {
@@ -185,10 +190,13 @@ $prospects = $matrix | Where-Object { ($_.SitecoreVersion.Major -eq "9" -and $_.
     }
 }
 
-# here we have prospects, most with context folder that can be build
-$prospects | Format-Table -Property Path, @{ Name = "Tag"; Expression = { $_.Prospect.Tag } }, Prospect
+# print prospects with VALID path
+$prospects | Where-Object { $_.Path -ne $null } | Format-Table -Property Path, @{ Name = "Tag"; Expression = { $_.Prospect.Tag } }, Prospect
 
-# find context folders NOT covered
+# print prospect with NO path
+$prospects | Where-Object { $_.Path -eq $null } | Format-Table -Property Path, @{ Name = "Tag"; Expression = { $_.Prospect.Tag } }, Prospect
+
+# print context folders NOT without any prospects
 (Join-Path $PSScriptRoot "\windows"), (Join-Path $PSScriptRoot "\linux") | ForEach-Object {
     $enginePath = $_
 
@@ -196,14 +204,9 @@ $prospects | Format-Table -Property Path, @{ Name = "Tag"; Expression = { $_.Pro
         $contextPath = $_.Directory.FullName
         $foundProspect = ($prospects | Where-Object { $_.Path -eq $contextPath }).Length -gt 0
 
-        if ($foundProspect)
+        if (!$foundProspect)
         {
-            Write-Host "$contextPath" -ForegroundColor Gray
+            Write-Warning "Found folder without prospect: $contextPath"
         }
-        else
-        {
-            Write-Host "NOT FOUND: $contextPath" -ForegroundColor Red
-        }
-
     }
 }
