@@ -1,4 +1,5 @@
-$data = Get-Content -Path (Join-Path $PSScriptRoot ".\build-matrix.json") | ConvertFrom-Json
+$ErrorActionPreference = "STOP"
+$VerbosePreference = "Continue"
 
 # Producer
 # TODO: ...
@@ -12,6 +13,10 @@ $data = Get-Content -Path (Join-Path $PSScriptRoot ".\build-matrix.json") | Conv
 # TODO: Rename "mssql-developer-2017" to somthing prefixed with "sitecore-"?
 # TODO: Rename "-sqldev" to "-sql" on Windows OR specify both in the matrix.
 
+# load build matrix data
+$data = Get-Content -Path (Join-Path $PSScriptRoot ".\build-matrix.json") | ConvertFrom-Json
+
+# parse build matrix data
 $versions = $data.versions | ForEach-Object {
     $version = $_
 
@@ -120,91 +125,126 @@ $matrix = [System.Collections.ArrayList]@()
 $matrix.AddRange($versions)
 $matrix.AddRange($dependencies)
 
-# print everything
-$matrix | Sort-Object -Property Type, SitecoreVersion, Platform, Topology, Role | Format-Table -Property Type, Repository, Topology, Role, Platform, DockerEngine, Tag
+# print build matrix
 #$matrix | Sort-Object -Property Type, SitecoreVersion, Platform, Topology, Role | Format-Table -Property SitecoreVersion, VariantVersion, Type, Repository, Topology, Role, Platform, DockerEngine, Tag
-return
-$prospects = $matrix | ForEach-Object {
-    $prospect = $_
 
-    $versionFolders = @(
-        ("{0}.{1}.{2}" -f $prospect.SitecoreVersion.Major, $prospect.SitecoreVersion.Minor, $prospect.SitecoreVersion.Patch),
-        ("{0}.{1}.x" -f $prospect.SitecoreVersion.Major, $prospect.SitecoreVersion.Minor),
-        ("{0}.x.x" -f $prospect.SitecoreVersion.Major)
-    )
+# load specifications
+(Join-Path $PSScriptRoot ".\windows"), (Join-Path $PSScriptRoot ".\linux") | Get-ChildItem -Recurse -File -Include "build.json" | ForEach-Object {
+    $buildJsonPath = $_.FullName
+    $buildContextPath = $_.Directory.FullName
+    $data = Get-Content -Path $buildJsonPath | ConvertFrom-Json
 
-    $repositoryName = $prospect.Repository
-
-    # TODO: Remove when -SQLDEV has been renamed to -SQL or both specified in the matrix
-    if ($prospect.Platform -ne "linux" -and $prospect.Repository -like "*-sql")
+    # check if new format
+    if ($data.spec -eq $null)
     {
-        $repositoryName = $prospect.Repository.Replace("-sql", "-sqldev");
+        # skip build.json files with old format...
+
+        return
     }
 
-    $repositoryFolders = @(
-        ("{0}" -f $repositoryName),
-        ("sitecore-{0}-{1}" -f $prospect.Topology, $prospect.Key),
-        ("sitecore-{0}" -f $prospect.Topology)
-    )
+    # use new format
+    $data = $data.spec
 
-    $found = $false
+    # check if there is a Dockerfile
+    $dockerFilePath = Join-Path $buildContextPath "\Dockerfile"
 
-    :Outer foreach ($repositoryFolder in $repositoryFolders)
+    if (!(Test-Path -Path $dockerFilePath -PathType "Leaf"))
     {
-        $repositoryPaths = @()
+        throw ("No Dockerfile was found at '{0}'." -f $dockerFilePath)
+    }
 
-        # TODO: Not sure that I like that the folders are this "static". Try to recursively lookup repository folder first in version folders then in the rest...
-        $versionFolders | ForEach-Object {
-            $versionFolder = $_
+    # find base images
+    $dockerFileContent = Get-Content -Path $dockerFilePath
+    $dockerFileArgLines = $dockerFileContent | Select-String -SimpleMatch "ARG " -CaseSensitive | ForEach-Object { Write-Output $_.ToString().Replace("ARG ", "") }
+    $dockerFileFromLines = $dockerFileContent | Select-String -SimpleMatch "FROM " -CaseSensitive | ForEach-Object { Write-Output $_.ToString().Replace("FROM ", "") }
 
-            $repositoryPaths += Join-Path $PSScriptRoot ("\{0}\{1}\{2}" -f $prospect.DockerEngine, $versionFolder, $repositoryFolder)
+    $baseImages = $dockerFileFromLines | ForEach-Object {
+        $from = $_
+        $image = $null
+
+        # remove multi-stage name
+        if ($from -like "* as *")
+        {
+            $from = $from.Substring(0, $from.IndexOf(" as "))
         }
 
-        $repositoryPaths += Join-Path $PSScriptRoot ("\{0}\dependencies\{1}" -f $prospect.DockerEngine, $repositoryFolder)
-        # /TODO
-
-        foreach ($repositoryPath in $repositoryPaths)
+        # if variable, find the base image in build-options or from ARG default value, if not use the as is
+        if ($from -like "`$*")
         {
-            if (Test-Path -Path $repositoryPath -PathType Container)
+            $argName = $from.Replace("`$", "").Replace("{", "").Replace("}", "")
+            $matchingOption = $data.'build-options' | Where-Object { $_.Contains($argName) } | Select-Object -First 1
+
+            if ($null -ne $matchingOption)
             {
-                $found = $true
+                # resolved image from ARG passed as build-args defined in build-options
+                $image = $matchingOption.Substring($matchingOption.IndexOf($argName) + $argName.Length).Replace("=", "")
+            }
+            else
+            {
+                $argDefaultValue = $dockerFileArgLines | Where-Object { $_ -match $argName } | ForEach-Object {
+                    Write-Output $_.Replace($argName, "").Replace("=", "")
+                }
 
-                Write-Output (New-Object PSObject -Property @{
-                        Path     = $repositoryPath;
-                        Prospect = $prospect;
-                    })
-
-                break :Outer
+                if ([string]::IsNullOrEmpty($argDefaultValue) -eq $false)
+                {
+                    # resolved image from ARG default value
+                    $image = $argDefaultValue
+                }
+                else
+                {
+                    throw ("Parse error in '{0}', Dockerfile is expecting ARG '{1}' but it has no default value and is not found in 'build-options'." -f $buildJsonPath, $argName)
+                }
             }
         }
-    }
-
-    if (!$found)
-    {
-        Write-Output (New-Object PSObject -Property @{
-                Path     = $null;
-                Prospect = $prospect;
-            })
-    }
-}
-
-# print prospects with VALID path
-$prospects | Where-Object { $_.Path -ne $null } | Format-Table -Property Path, @{ Name = "Tag"; Expression = { $_.Prospect.Tag } }, Prospect
-
-# print prospect with NO path
-$prospects | Where-Object { $_.Path -eq $null } | Format-Table -Property Path, @{ Name = "Tag"; Expression = { $_.Prospect.Tag } }, Prospect
-
-# print context folders NOT without any prospects
-(Join-Path $PSScriptRoot "\windows"), (Join-Path $PSScriptRoot "\linux") | ForEach-Object {
-    $enginePath = $_
-
-    Get-ChildItem -Path $enginePath -Filter "Dockerfile" -Recurse | ForEach-Object {
-        $contextPath = $_.Directory.FullName
-        $foundProspect = ($prospects | Where-Object { $_.Path -eq $contextPath }).Length -gt 0
-
-        if (!$foundProspect)
+        else
         {
-            Write-Warning "Found folder without prospect: $contextPath"
+            # resolved image name directly
+            $image = $from
         }
+
+        # done
+        Write-Output $image
     }
+
+    # if no base images found then something is very wrong
+    if ($null -eq $baseImages -or $baseImages.Length -eq 0)
+    {
+        throw ("Parse error, no base images was found in Dockerfile '{0}'." -f $dockerFilePath)
+    }
+
+    # setup build options
+    $options = $data.'build-options'
+
+    if ($null -eq $options)
+    {
+        $options = @()
+    }
+
+    # setup sources
+    $sources = @()
+
+    if ($null -ne $data.sources)
+    {
+        $sources = $data.sources
+    }
+
+    # setup compatibility
+    $compatibility = (New-Object PSObject -Property @{
+            Versions   = @($data.compatibility.versions);
+            Topologies = @($data.compatibility.topologies | ForEach-Object { New-Object PSObject -Property @{
+                        Name  = $_.name;
+                        Roles = @($_.roles);
+                    } });
+            Variants   = @($data.compatibility.variants);
+        })
+
+    # done
+    Write-Output (New-Object PSObject -Property @{
+            BuildContextPath = $buildContextPath;
+            DockerFilePath   = $dockerFilePath;
+            Compatibility    = $compatibility;
+            BuildOptions     = @($options);
+            BaseImages       = @($baseImages | Select-Object -Unique);
+            Sources          = @($sources);
+        })
 }

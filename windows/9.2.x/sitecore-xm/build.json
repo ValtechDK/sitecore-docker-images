@@ -39,11 +39,12 @@
       "variants": []
     },
     "build-options": [
-      "--build-arg BASE_IMAGE=mcr.microsoft.com/dotnet/framework/aspnet:4.8-${spec.platform.???windowsservercore???.name}",
-      "--build-arg ASSETS_IMAGE=sitecore-assets:${spec.version.name}-${spec.platform.???nanoserver???.name}",
-      "--build-arg ASSETS_USE_WDP='C:\\packages\\Sitecore ${spec.version.name} rev. ${spec.version.revision} (${spec.topology.name}) (OnPrem)_${spec.role.name}.scwdp.zip'",
-      "--build-arg SC_ROLE_CONFIG_DIRECTORY=.\\config\\${spec.role.name}",
-      "--build-arg SC_ROLE_DEFINE='${spec.role.define}'"
-    ]
+      "--build-arg BASE_IMAGE=mcr.microsoft.com/dotnet/framework/aspnet:4.8-${platform.???windowsservercore???.name}",
+      "--build-arg ASSETS_IMAGE=sitecore-assets:${version.name}-${platform.???nanoserver???.name}",
+      "--build-arg ASSETS_USE_WDP='C:\\packages\\Sitecore ${version.name} rev. ${version.revision} (${topology.name}) (OnPrem)_${role.name}.scwdp.zip'",
+      "--build-arg SC_ROLE_CONFIG_DIRECTORY=.\\config\\${role.name}",
+      "--build-arg SC_ROLE_DEFINE='${role.define}'"
+    ],
+    "sources": []
   }
 }
