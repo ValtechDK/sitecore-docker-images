@@ -8,6 +8,7 @@ $data = Get-Content -Path (Join-Path $PSScriptRoot ".\build-matrix.json") | Conv
 
 # Other
 # NOTE: "requires"/dependencies/build order skal udledes af build-args fra build.json (og IKKE i matrix.json)
+# NOTE: Important that there are NO requirements on filesystem layout
 # TODO: Rename "mssql-developer-2017" to somthing prefixed with "sitecore-"?
 # TODO: Rename "-sqldev" to "-sql" on Windows OR specify both in the matrix.
 

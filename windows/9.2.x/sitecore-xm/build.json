@@ -24,9 +24,6 @@
   "sources": [],
   "spec": {
     "compatibility": {
-      "notes": [
-        "TODO: Med dette er det LIGEMEGET hvor på disk denne folder er!!!, platform/os giver ikke mening da det kan udledes af role"
-      ],
       "versions": [
         "9.2.*"
       ],
