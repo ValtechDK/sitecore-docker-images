@@ -7,25 +7,24 @@ $data = Get-Content -Path (Join-Path $PSScriptRoot ".\build-matrix.json") | Conv
 # TODO: Hvordan merger vi path for tags der bygges ud fra samme folder men med forskellige paramter?
 
 # Other
-# NOTE: "requires"/dependencies/build order skal udledes af build-args fra build.json
+# NOTE: "requires"/dependencies/build order skal udledes af build-args fra build.json (og IKKE i matrix.json)
 # TODO: Rename "mssql-developer-2017" to somthing prefixed with "sitecore-"?
 # TODO: Rename "-sqldev" to "-sql" on Windows OR specify both in the matrix.
 
 $versions = $data.versions | ForEach-Object {
     $version = $_
 
-    $version.dependencies | ForEach-Object {
-        $dependency = $_
+    $version.images | ForEach-Object {
+        $image = $_
 
-        $data.platforms | Where-Object { $dependency.os -contains $_.os } | ForEach-Object {
+        $data.platforms | Where-Object { $image.os -contains $_.os } | ForEach-Object {
             $platform = $_
-            $repository = "sitecore-$($dependency.name)";
+            $repository = "sitecore-$($image.name)";
 
             Write-Output (New-Object PSObject -Property @{
                     Type            = "dependency";
                     SitecoreVersion = (New-Object PSObject -Property @{ "Major" = $version.major; "Minor" = $version.minor; "Patch" = $version.patch; "Revision" = $version.revision; });
                     Repository      = $repository;
-                    Key             = $dependency.name;
                     VariantVersion  = (New-Object PSObject -Property @{ "Major" = "0"; "Minor" = "0"; "Patch" = "0"; "Revision" = "0" });
                     Topology        = $null;
                     Role            = $null;
@@ -50,7 +49,6 @@ $versions = $data.versions | ForEach-Object {
                         Type            = "platform";
                         SitecoreVersion = (New-Object PSObject -Property @{ "Major" = $version.major; "Minor" = $version.minor; "Patch" = $version.patch; "Revision" = $version.revision; });
                         Repository      = $repository;
-                        Key             = $null;
                         VariantVersion  = (New-Object PSObject -Property @{ "Major" = "0"; "Minor" = "0"; "Patch" = "0"; "Revision" = "0" });
                         Topology        = $topology.name;
                         Role            = $role.name;
@@ -83,7 +81,6 @@ $versions = $data.versions | ForEach-Object {
                             Type            = "variant";
                             SitecoreVersion = (New-Object PSObject -Property @{ "Major" = $version.major; "Minor" = $version.minor; "Patch" = $version.patch; "Revision" = $version.revision; });
                             Repository      = $repository;
-                            Key             = $variant.name;
                             VariantVersion  = (New-Object PSObject -Property @{ "Major" = $variant.version.major; "Minor" = $variant.version.minor; "Patch" = $variant.version.patch; "Revision" = $variant.version.revision; }); ;
                             Topology        = $topologyReference.name;
                             Role            = $roleReference.name;
@@ -99,22 +96,21 @@ $versions = $data.versions | ForEach-Object {
 
 $dependencies = $data.dependencies | ForEach-Object {
     $dependency = $_
+    $repository = $dependency.name;
 
     $data.platforms | Where-Object { $dependency.os -contains $_.os } | ForEach-Object {
         $platform = $_
-        $repository = $dependency.name
 
         Write-Output (New-Object PSObject -Property @{
                 Type            = "dependency";
                 SitecoreVersion = (New-Object PSObject -Property @{ "Major" = "0"; "Minor" = "0"; "Patch" = "0"; "Revision" = "0" });
                 Repository      = $repository;
-                Key             = $dependency.name;
                 VariantVersion  = (New-Object PSObject -Property @{ "Major" = "0"; "Minor" = "0"; "Patch" = "0"; "Revision" = "0" });
                 Topology        = $null;
                 Role            = $null;
                 Platform        = "$($platform.name)";
                 DockerEngine    = $platform.engine;
-                Tag             = "$($respository):????-$($platform.name)";
+                Tag             = "$($repository):$($dependency.version)-$($platform.name)";
             })
     }
 }
@@ -124,8 +120,9 @@ $matrix.AddRange($versions)
 $matrix.AddRange($dependencies)
 
 # print everything
-$matrix | Sort-Object -Property Type, SitecoreVersion, Platform, Topology, Role | Format-Table -Property SitecoreVersion, VariantVersion, Type, Key, Repository, Topology, Role, Platform, DockerEngine, Tag
-
+$matrix | Sort-Object -Property Type, SitecoreVersion, Platform, Topology, Role | Format-Table -Property Type, Repository, Topology, Role, Platform, DockerEngine, Tag
+#$matrix | Sort-Object -Property Type, SitecoreVersion, Platform, Topology, Role | Format-Table -Property SitecoreVersion, VariantVersion, Type, Repository, Topology, Role, Platform, DockerEngine, Tag
+return
 $prospects = $matrix | ForEach-Object {
     $prospect = $_
 

@@ -25,13 +25,14 @@
                     }
                 }
             ],
-            "dependencies": [
+            "images": [
                 {
                     "name": "assets",
                     "os": [
                         "nanoserver",
                         "linux"
-                    ]
+                    ],
+                    "type": "dependency"
                 }
             ]
         },
@@ -60,13 +61,13 @@
                     }
                 }
             ],
-            "dependencies": [
+            "images": [
                 {
                     "name": "assets",
                     "os": [
-                        "nanoserver",
-                        "linux"
-                    ]
+                        "nanoserver"
+                    ],
+                    "type": "dependency"
                 }
             ]
         },
@@ -76,13 +77,13 @@
             "patch": "0",
             "revision": "001564",
             "variants": [],
-            "dependencies": [
+            "images": [
                 {
                     "name": "assets",
                     "os": [
-                        "nanoserver",
-                        "linux"
-                    ]
+                        "nanoserver"
+                    ],
+                    "type": "dependency"
                 }
             ]
         },
@@ -92,13 +93,13 @@
             "patch": "2",
             "revision": "180604",
             "variants": [],
-            "dependencies": [
+            "images": [
                 {
                     "name": "assets",
                     "os": [
-                        "nanoserver",
-                        "linux"
-                    ]
+                        "nanoserver"
+                    ],
+                    "type": "dependency"
                 }
             ]
         }
@@ -106,18 +107,28 @@
     "dependencies": [
         {
             "name": "sitecore-certificates",
+            "version": "latest",
             "os": [
                 "nanoserver"
             ]
         },
         {
-            "name": "mssql-developer-2017",
+            "name": "sitecore-tools",
+            "version": "latest",
+            "os": [
+                "nanoserver"
+            ]
+        },
+        {
+            "name": "mssql-developer",
+            "version": "2017",
             "os": [
                 "windowsserver"
             ]
         },
         {
             "name": "sitecore-openjdk",
+            "version": "8",
             "os": [
                 "nanoserver"
             ]
@@ -129,7 +140,7 @@
             "roles": [
                 {
                     "name": "cm",
-                    "role-define": [
+                    "define": [
                         "ContentManagement",
                         "Indexing"
                     ],
@@ -139,7 +150,7 @@
                 },
                 {
                     "name": "cd",
-                    "role-define": [
+                    "define": [
                         "ContentDelivery"
                     ],
                     "os": [
@@ -148,7 +159,7 @@
                 },
                 {
                     "name": "solr",
-                    "role-define": [],
+                    "define": [],
                     "os": [
                         "nanoserver",
                         "linux"
@@ -156,7 +167,7 @@
                 },
                 {
                     "name": "sql",
-                    "role-define": [],
+                    "define": [],
                     "os": [
                         "windowsserver",
                         "linux"
@@ -169,7 +180,7 @@
             "roles": [
                 {
                     "name": "standalone",
-                    "role-define": [
+                    "define": [
                         "Standalone"
                     ],
                     "os": [
@@ -178,7 +189,7 @@
                 },
                 {
                     "name": "cd",
-                    "role-define": [
+                    "define": [
                         "ContentDelivery"
                     ],
                     "os": [
@@ -187,7 +198,7 @@
                 },
                 {
                     "name": "solr",
-                    "role-define": [],
+                    "define": [],
                     "os": [
                         "nanoserver",
                         "linux"
@@ -195,7 +206,7 @@
                 },
                 {
                     "name": "sql",
-                    "role-define": [],
+                    "define": [],
                     "os": [
                         "windowsserver",
                         "linux"
@@ -203,21 +214,21 @@
                 },
                 {
                     "name": "xconnect",
-                    "role-define": [],
+                    "define": [],
                     "os": [
                         "windowsserver"
                     ]
                 },
                 {
                     "name": "xconnect-indexworker",
-                    "role-define": [],
+                    "define": [],
                     "os": [
                         "windowsserver"
                     ]
                 },
                 {
                     "name": "xconnect-automationengine",
-                    "role-define": [],
+                    "define": [],
                     "os": [
                         "windowsserver"
                     ]
