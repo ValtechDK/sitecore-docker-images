@@ -29,9 +29,10 @@ $versions = $data.versions | ForEach-Object {
 
             Write-Output (New-Object PSObject -Property @{
                     Type            = "dependency";
-                    SitecoreVersion = (New-Object PSObject -Property @{ "Major" = $version.major; "Minor" = $version.minor; "Patch" = $version.patch; "Revision" = $version.revision; });
+                    SitecoreVersion = (New-Object PSObject -Property @{ "Name" = "$($version.major).$($version.minor).$($version.patch)"; "Major" = $version.major; "Minor" = $version.minor; "Patch" = $version.patch; "Revision" = $version.revision; });
                     Repository      = $repository;
-                    VariantVersion  = (New-Object PSObject -Property @{ "Major" = "0"; "Minor" = "0"; "Patch" = "0"; "Revision" = "0" });
+                    VariantName     = $null;
+                    VariantVersion  = (New-Object PSObject -Property @{ "Name" = "0.0.0"; "Major" = "0"; "Minor" = "0"; "Patch" = "0"; "Revision" = "0" });
                     Topology        = $null;
                     Role            = $null;
                     Platform        = "$($platform.name)";
@@ -53,9 +54,10 @@ $versions = $data.versions | ForEach-Object {
 
                 Write-Output (New-Object PSObject -Property @{
                         Type            = "platform";
-                        SitecoreVersion = (New-Object PSObject -Property @{ "Major" = $version.major; "Minor" = $version.minor; "Patch" = $version.patch; "Revision" = $version.revision; });
+                        SitecoreVersion = (New-Object PSObject -Property @{ "Name" = "$($version.major).$($version.minor).$($version.patch)"; "Major" = $version.major; "Minor" = $version.minor; "Patch" = $version.patch; "Revision" = $version.revision; });
                         Repository      = $repository;
-                        VariantVersion  = (New-Object PSObject -Property @{ "Major" = "0"; "Minor" = "0"; "Patch" = "0"; "Revision" = "0" });
+                        VariantName     = $null;
+                        VariantVersion  = (New-Object PSObject -Property @{ "Name" = "0.0.0"; "Major" = "0"; "Minor" = "0"; "Patch" = "0"; "Revision" = "0" });
                         Topology        = $topology.name;
                         Role            = $role.name;
                         Platform        = $platform.name;
@@ -85,9 +87,10 @@ $versions = $data.versions | ForEach-Object {
 
                     Write-Output (New-Object PSObject -Property @{
                             Type            = "variant";
-                            SitecoreVersion = (New-Object PSObject -Property @{ "Major" = $version.major; "Minor" = $version.minor; "Patch" = $version.patch; "Revision" = $version.revision; });
+                            SitecoreVersion = (New-Object PSObject -Property @{ "Name" = "$($version.major).$($version.minor).$($version.patch)"; "Major" = $version.major; "Minor" = $version.minor; "Patch" = $version.patch; "Revision" = $version.revision; });
                             Repository      = $repository;
-                            VariantVersion  = (New-Object PSObject -Property @{ "Major" = $variant.version.major; "Minor" = $variant.version.minor; "Patch" = $variant.version.patch; "Revision" = $variant.version.revision; }); ;
+                            VariantName     = $variant.name;
+                            VariantVersion  = (New-Object PSObject -Property @{ "Name" = "$($variant.version.major).$($variant.version.minor).$($variant.version.patch)"; "Major" = $variant.version.major; "Minor" = $variant.version.minor; "Patch" = $variant.version.patch; "Revision" = $variant.version.revision; }); ;
                             Topology        = $topologyReference.name;
                             Role            = $roleReference.name;
                             Platform        = $platform.name;
@@ -109,9 +112,10 @@ $dependencies = $data.dependencies | ForEach-Object {
 
         Write-Output (New-Object PSObject -Property @{
                 Type            = "dependency";
-                SitecoreVersion = (New-Object PSObject -Property @{ "Major" = "0"; "Minor" = "0"; "Patch" = "0"; "Revision" = "0" });
+                SitecoreVersion = (New-Object PSObject -Property @{ "Name" = "0.0.0"; "Major" = "0"; "Minor" = "0"; "Patch" = "0"; "Revision" = "0" });
                 Repository      = $repository;
-                VariantVersion  = (New-Object PSObject -Property @{ "Major" = "0"; "Minor" = "0"; "Patch" = "0"; "Revision" = "0" });
+                VariantName     = $null;
+                VariantVersion  = (New-Object PSObject -Property @{ "Name" = "0.0.0"; "Major" = "0"; "Minor" = "0"; "Patch" = "0"; "Revision" = "0" });
                 Topology        = $null;
                 Role            = $null;
                 Platform        = "$($platform.name)";
@@ -129,7 +133,7 @@ $matrix.AddRange($dependencies)
 #$matrix | Sort-Object -Property Type, SitecoreVersion, Platform, Topology, Role | Format-Table -Property SitecoreVersion, VariantVersion, Type, Repository, Topology, Role, Platform, DockerEngine, Tag
 
 # load specifications
-(Join-Path $PSScriptRoot ".\windows"), (Join-Path $PSScriptRoot ".\linux") | Get-ChildItem -Recurse -File -Include "build.json" | ForEach-Object {
+$specifications = (Join-Path $PSScriptRoot ".\windows"), (Join-Path $PSScriptRoot ".\linux") | Get-ChildItem -Recurse -File -Include "build.json" | ForEach-Object {
     $buildJsonPath = $_.FullName
     $buildContextPath = $_.Directory.FullName
     $data = Get-Content -Path $buildJsonPath | ConvertFrom-Json
@@ -248,3 +252,61 @@ $matrix.AddRange($dependencies)
             Sources          = @($sources);
         })
 }
+
+# print specifications
+$specifications
+
+# now merge the matrix with specifications
+$specifications | ForEach-Object {
+    $spec = $_
+
+    # reduces to compatible versions
+    $matches = $spec.Compatibility.Versions | ForEach-Object {
+        $versionToMatch = $_
+
+        Write-Output ($matrix | Where-Object { $_.SitecoreVersion.Name -like $versionToMatch } )
+    }
+
+    $matches.Count
+
+    # reduces to compatible topologies
+    $matches = $spec.Compatibility.Topologies | ForEach-Object {
+        $topologyToMatch = $_
+
+        Write-Output ($matches | Where-Object { $_.Topology -eq $topologyToMatch.Name } )
+    }
+
+    $matches.Count
+
+    # reduces to compatible roles
+    $matches = $spec.Compatibility.Topologies | ForEach-Object {
+        $topologyToMatch = $_
+
+        Write-Output ($matches | Where-Object { $topologyToMatch.Roles -contains $_.Role } )
+    }
+
+    $matches.Count
+
+    if ($spec.Compatibility.Variants.Length -gt 0)
+    {
+        # reduces to compatible variants
+        $matches = $spec.Compatibility.Variants | ForEach-Object {
+            $variantToMatch = $_
+
+            Write-Output ($matches | Where-Object { $_.VariantName -eq $variantToMatch } )
+        }
+    }
+    else
+    {
+        # reducts to without any variants
+        $matches = $matches | Where-Object { $_.Type -ne "variant" }
+    }
+
+    $matches.Count
+
+    $matches | Format-Table
+}
+
+# filtering done before reducing
+# find out dependencies to add
+# resolve order
