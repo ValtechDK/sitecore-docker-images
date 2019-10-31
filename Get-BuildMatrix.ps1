@@ -37,7 +37,6 @@ $versions = $data.versions | ForEach-Object {
                     Role            = $null;
                     Platform        = "$($platform.name)";
                     DockerEngine    = $platform.engine;
-                    Tag             = "$($repository):$($version.major).$($version.minor).$($version.patch)-$($platform.name)";
                 })
         }
     }
@@ -62,7 +61,6 @@ $versions = $data.versions | ForEach-Object {
                         Role            = $role.name;
                         Platform        = $platform.name;
                         DockerEngine    = $platform.engine;
-                        Tag             = "$($repository):$($version.major).$($version.minor).$($version.patch)-$($platform.name)";
                     })
             }
         }
@@ -95,7 +93,6 @@ $versions = $data.versions | ForEach-Object {
                             Role            = $roleReference.name;
                             Platform        = $platform.name;
                             DockerEngine    = $platform.engine;
-                            Tag             = "$($repository):$($version.major).$($version.minor).$($version.patch)-$($platform.name)";
                         })
                 }
             }
@@ -120,7 +117,6 @@ $dependencies = $data.dependencies | ForEach-Object {
                 Role            = $null;
                 Platform        = "$($platform.name)";
                 DockerEngine    = $platform.engine;
-                Tag             = "$($repository):$($dependency.version)-$($platform.name)";
             })
     }
 }
@@ -257,10 +253,12 @@ $specifications = (Join-Path $PSScriptRoot ".\windows"), (Join-Path $PSScriptRoo
 $specifications
 
 # now merge the matrix with specifications
-$specifications | ForEach-Object {
+$jobs = $specifications | ForEach-Object {
     $spec = $_
 
-    # reduces to compatible versions
+    $matrix.Count
+
+    # reduces list to compatible versions
     $matches = $spec.Compatibility.Versions | ForEach-Object {
         $versionToMatch = $_
 
@@ -269,7 +267,7 @@ $specifications | ForEach-Object {
 
     $matches.Count
 
-    # reduces to compatible topologies
+    # reduces list to compatible topologies
     $matches = $spec.Compatibility.Topologies | ForEach-Object {
         $topologyToMatch = $_
 
@@ -278,7 +276,7 @@ $specifications | ForEach-Object {
 
     $matches.Count
 
-    # reduces to compatible roles
+    # reduces list to compatible roles
     $matches = $spec.Compatibility.Topologies | ForEach-Object {
         $topologyToMatch = $_
 
@@ -289,7 +287,7 @@ $specifications | ForEach-Object {
 
     if ($spec.Compatibility.Variants.Length -gt 0)
     {
-        # reduces to compatible variants
+        # reduces list to compatible variants
         $matches = $spec.Compatibility.Variants | ForEach-Object {
             $variantToMatch = $_
 
@@ -298,14 +296,29 @@ $specifications | ForEach-Object {
     }
     else
     {
-        # reducts to without any variants
+        # reduces list to exclude variants
         $matches = $matches | Where-Object { $_.Type -ne "variant" }
     }
 
     $matches.Count
-
     $matches | Format-Table
+
+    # done
+    $matches | ForEach-Object {
+        $prospect = $_
+
+        Write-Output (New-Object PSObject -Property @{
+                BuildContextPath = $buildContextPath;
+                DockerFilePath   = $dockerFilePath;
+                DockerEngine     = $prospect.DockerEngine;
+                BuildOptions     = $spec.BuildOptions;
+                Sources          = @($sources);
+                Tag              = "$($prospect.Repository):$($prospect.SitecoreVersion.name)-$($prospect.Platform)";
+            })
+    }
 }
+
+$jobs | Format-Table
 
 # filtering done before reducing
 # find out dependencies to add
