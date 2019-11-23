@@ -57,15 +57,17 @@ function Get-BuildJob
 
             # done
             $matches | ForEach-Object {
-                $prospect = $_
+                $blueprint = $_
 
                 Write-Output (New-Object PSObject -Property @{
                         BuildContextPath = $spec.BuildContextPath;
                         DockerFilePath   = $spec.DockerFilePath;
-                        DockerEngine     = $prospect.DockerEngine;
-                        BuildOptions     = $spec.BuildOptions;
+                        DockerEngine     = $blueprint.Platform.Engine;
+                        BuildOptions     = @($spec.BuildOptions);
                         Sources          = @($spec.Sources);
-                        Tag              = "$($prospect.Repository):$($prospect.SitecoreVersion.name)-$($prospect.Platform)";
+                        BaseImages       = @($spec.BaseImages);
+                        Tag              = "$($blueprint.Repository):$($blueprint.SitecoreVersion.Name)-$($blueprint.Platform)";
+                        Blueprint        = $blueprint
                     })
             }
         }

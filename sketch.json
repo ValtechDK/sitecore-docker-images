@@ -23,6 +23,15 @@
                         "patch": "0",
                         "revision": "190528"
                     }
+                },
+                {
+                    "name": "jss",
+                    "version": {
+                        "major": "12",
+                        "minor": "0",
+                        "patch": "0",
+                        "revision": "190522"
+                    }
                 }
             ],
             "images": [
@@ -32,7 +41,7 @@
                         "nanoserver",
                         "linux"
                     ],
-                    "type": "dependency"
+                    "type": "platform"
                 }
             ]
         },
@@ -67,7 +76,7 @@
                     "os": [
                         "nanoserver"
                     ],
-                    "type": "dependency"
+                    "type": "platform"
                 }
             ]
         },
@@ -83,7 +92,7 @@
                     "os": [
                         "nanoserver"
                     ],
-                    "type": "dependency"
+                    "type": "platform"
                 }
             ]
         },
@@ -99,7 +108,7 @@
                     "os": [
                         "nanoserver"
                     ],
-                    "type": "dependency"
+                    "type": "platform"
                 }
             ]
         }
@@ -245,14 +254,16 @@
                     "roles": [
                         "cm",
                         "sql"
-                    ]
+                    ],
+                    "additional": []
                 },
                 {
                     "name": "xp",
                     "roles": [
                         "standalone",
                         "sql"
-                    ]
+                    ],
+                    "additional": []
                 }
             ]
         },
@@ -265,6 +276,39 @@
                         "cm",
                         "cd",
                         "sql"
+                    ],
+                    "additional": []
+                },
+                {
+                    "name": "xp",
+                    "roles": [
+                        "standalone",
+                        "cd",
+                        "sql"
+                    ],
+                    "additional": []
+                }
+            ]
+        },
+        {
+            "name": "jss",
+            "topologies": [
+                {
+                    "name": "xm",
+                    "roles": [
+                        "cm",
+                        "cd",
+                        "sql"
+                    ],
+                    "additional": [
+                        {
+                            "name": "renderinghost",
+                            "define": [],
+                            "os": [
+                                "nanoserver",
+                                "linux"
+                            ]
+                        }
                     ]
                 },
                 {
@@ -273,12 +317,34 @@
                         "standalone",
                         "cd",
                         "sql"
+                    ],
+                    "additional": [
+                        {
+                            "name": "renderinghost",
+                            "define": [],
+                            "os": [
+                                "nanoserver",
+                                "linux"
+                            ]
+                        }
                     ]
                 }
             ]
         }
     ],
     "platforms": [
+        {
+            "name": "windowsservercore-1909",
+            "os": "windowsserver",
+            "engine": "windows",
+            "build": "1909"
+        },
+        {
+            "name": "nanoserver-1909",
+            "os": "nanoserver",
+            "engine": "windows",
+            "build": "1909"
+        },
         {
             "name": "windowsservercore-1903",
             "os": "windowsserver",

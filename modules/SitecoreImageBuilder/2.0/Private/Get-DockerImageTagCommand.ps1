@@ -1,6 +1,6 @@
 Set-StrictMode -Version 3.0
 
-function Get-Stuff
+function Get-DockerImageTagCommand
 {
     [CmdletBinding()]
     param(
@@ -9,6 +9,6 @@ function Get-Stuff
 
     Process
     {
-        Write-Host "Get-Stuff"
+        Write-Host "Get-DockerImageTagCommand"
     }
 }
