@@ -34,7 +34,7 @@ function Invoke-PackageRestore
     $ErrorActionPreference = "STOP"
     $ProgressPreference = "SilentlyContinue"
 
-    $downloadUrl = "https://dev.sitecore.net"
+    $sitecoreDownloadUrl = "https://dev.sitecore.net"
 
     # Load packages file
     $packagesFile = Get-Item -Path (Join-Path $PSScriptRoot "..\..\sitecore-packages.json")
@@ -49,7 +49,7 @@ function Invoke-PackageRestore
     }
 
     # Find out which files is needed
-    $downloadSession = $null
+    $sitecoreDownloadSession = $null
     $specs = Initialize-BuildSpecifications -Specifications (Get-BuildSpecifications -Path $Path -AutoGenerateWindowsVersionTags $AutoGenerateWindowsVersionTags) -InstallSourcePath $Destination -Tags $Tags -ImplicitTagsBehavior "Include" -DeprecatedTagsBehavior $DeprecatedTagsBehavior
     $expected = $specs | Where-Object { $_.Include -and $_.Sources.Length -gt 0 } | Select-Object -ExpandProperty Sources -Unique
 
@@ -88,29 +88,37 @@ function Invoke-PackageRestore
 
         if ($PSCmdlet.ShouldProcess($fileName))
         {
-            # Login to dev.sitecore.net and save session for re-use
-            if ($null -eq $downloadSession)
-            {
-                Write-Verbose ("Logging in to '{0}'..." -f $downloadUrl)
-
-                $loginResponse = Invoke-WebRequest "https://dev.sitecore.net/api/authorization" -Method Post -Body @{
-                    username   = $SitecoreUsername
-                    password   = $SitecorePassword
-                    rememberMe = $true
-                } -SessionVariable "downloadSession" -UseBasicParsing
-
-                if ($null -eq $loginResponse -or $loginResponse.StatusCode -ne 200 -or $loginResponse.Content -eq "false")
-                {
-                    throw ("Unable to login to '{0}' with the supplied credentials." -f $downloadUrl)
-                }
-
-                Write-Verbose ("Logged in to '{0}'." -f $downloadUrl)
-            }
-
-            # Download package using saved session
             Write-Host ("Downloading '{0}' to '{1}'..." -f $fileUrl, $filePath)
 
-            Invoke-WebRequest -Uri $fileUrl -OutFile $filePath -WebSession $downloadSession -UseBasicParsing
+            if ($fileUrl.StartsWith($sitecoreDownloadUrl))
+            {
+                # Login to dev.sitecore.net and save session for re-use
+                if ($null -eq $sitecoreDownloadSession)
+                {
+                    Write-Verbose ("Logging in to '{0}'..." -f $sitecoreDownloadUrl)
+
+                    $loginResponse = Invoke-WebRequest "https://dev.sitecore.net/api/authorization" -Method Post -Body @{
+                        username   = $SitecoreUsername
+                        password   = $SitecorePassword
+                        rememberMe = $true
+                    } -SessionVariable "sitecoreDownloadSession" -UseBasicParsing
+
+                    if ($null -eq $loginResponse -or $loginResponse.StatusCode -ne 200 -or $loginResponse.Content -eq "false")
+                    {
+                        throw ("Unable to login to '{0}' with the supplied credentials." -f $sitecoreDownloadUrl)
+                    }
+
+                    Write-Verbose ("Logged in to '{0}'." -f $sitecoreDownloadUrl)
+                }
+
+                # Download package using saved session
+                Invoke-WebRequest -Uri $fileUrl -OutFile $filePath -WebSession $sitecoreDownloadSession -UseBasicParsing
+            }
+            else
+            {
+                # Download package
+                Invoke-WebRequest -Uri $fileUrl -OutFile $filePath -UseBasicParsing
+            }
         }
     }
 
@@ -346,7 +354,7 @@ function Initialize-BuildSpecifications
     # Update specs, include or not
     $Specifications | ForEach-Object {
         $spec = $_
-
+     
         $spec.Include = ($Tags | ForEach-Object { $spec.Tag -like $_ }) -contains $true
 
         if ($spec.Include -eq $true -and $spec.Deprecated -eq $true -and $DeprecatedTagsBehavior -eq "Skip")
@@ -361,7 +369,7 @@ function Initialize-BuildSpecifications
     if ($ImplicitTagsBehavior -eq "Include")
     {
         $Specifications | Where-Object { $_.Include -eq $true } | ForEach-Object {
-            $spec = $_
+            $spec = $_       
 
             # Recursively iterate bases, excluding external ones, and re-include them
             $baseSpecs = $Specifications | Where-Object { $spec.Base -contains $_.Tag }
@@ -406,13 +414,16 @@ function Initialize-BuildSpecifications
         "^sitecore-(xm1|xp)-sxa-(.*)-(standalone|cm|cd):(.*)$" # legacy\variants
 
         "^sitecore-(xm|xp)-(sql|sqldev):(.*)$", # windows/linux platform
-        "^sitecore-(xm|xp)-(standalone|cm|cd):(.*)$" # windows platform
+        "^sitecore-(xm|xp)-(standalone|cm|cd|identity):(.*)$" # windows platform
+        "^sitecore-xp-xconnect(.*):(.*)$" # windows platform
 
         "^sitecore-(xm|xp)-(spe|pse)-(sql|sqldev):(.*)$" # SPE windows/linux variants
         "^sitecore-(xm|xp)-(spe|pse)-(standalone|cm|cd):(.*)$" # SPE windows variants
 
         "^sitecore-(xm|xp)-sxa-(sql|sqldev):(.*)$" # SXA windows/linux variants
         "^sitecore-(xm|xp)-sxa-(standalone|cm|cd):(.*)$" # SXA  windows variants
+
+        "^sitecore-xc-(.*):(.*)$" # XC windows variants
     )
 
     $patterns | ForEach-Object {
@@ -672,12 +683,13 @@ function Get-CurrentImagesMarkdown
 function Get-SupportedWindowsVersions
 {
     # NOTE: Order is important, newest first
-    Write-Output ("1903", "ltsc2019")
+    Write-Output ("1909", "1903", "ltsc2019")
 }
 
 function Get-WindowsServerCoreToNanoServerVersionMap
 {
     Write-Output @{
+        "1909"     = "1909";
         "1903"     = "1903";
         "ltsc2019" = "1809";
         "1803"     = "1803";
@@ -691,20 +703,8 @@ function Get-LatestSupportedVersion
     # load Windows image specifications
     $specs = Get-BuildSpecifications -Path (Join-Path $PSScriptRoot "\..\..\windows")
 
-    # find all Sitecore versions
-    $versions = $specs | Where-Object { $_.Tag -like "sitecore-*:*windowsservercore-*" } | Select-Object -ExpandProperty Tag
-    $versions = $versions | ForEach-Object {
-        $_.Substring($_.IndexOf(':') + 1)
-    }
-
-    $versions = $versions | ForEach-Object {
-        $_.Substring(0, $_.IndexOf('-'))
-    }
-
-    $versions = $versions | Sort-Object -Unique -Descending
-
-    # pick latest Sitecore version
-    $sitecore = $versions | Select-Object -First 1
+    # get the latest version number for Sitecore
+    $sitecore = Get-LatestVersionNumberForTag -Specs $specs -Tag "sitecore-*:*windowsservercore-*"
 
     # pick latest 'windowsservercore' LTSC version
     $windowsServerCore = (Get-SupportedWindowsVersions | Where-Object { $_ -like "ltsc*" } | Select-Object -First 1)
@@ -712,11 +712,43 @@ function Get-LatestSupportedVersion
     # pick latest 'nanoserver' version matching latest 'windowsservercore' LTSC version
     $nanoserver = (Get-WindowsServerCoreToNanoServerVersionMap)[$windowsServerCore]
 
+    # get the latest version for redis
+    $redis = Get-LatestVersionNumberForTag -Specs $specs -Tag "sitecore-redis*:*windowsservercore-*"
+
     Write-Output (New-Object PSObject -Property @{
             Sitecore          = $sitecore;
             WindowsServerCore = $windowsServerCore;
             NanoServer        = $nanoserver;
+            Redis            = $redis;
         })
+}
+
+function Get-LatestVersionNumberForTag
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [array]$Specs
+        ,
+        [Parameter(Mandatory = $true)]
+        [string]$Tag
+    )
+
+        # find all versions for the tag
+        $versions = $Specs | Where-Object { $_.Tag -like $Tag } | Select-Object -ExpandProperty Tag
+
+        $versions = $versions | ForEach-Object {
+            $_.Substring($_.IndexOf(':') + 1)
+        }
+    
+        $versions = $versions | ForEach-Object {
+            $_.Substring(0, $_.IndexOf('-'))
+        }
+    
+        $versions = $versions | Sort-Object -Unique -Descending
+    
+        # pick latest version for the tag
+        Write-Output ($versions | Select-Object -First 1)
 }
 
 function Get-LatestSupportedVersionTags
@@ -725,4 +757,5 @@ function Get-LatestSupportedVersionTags
 
     Write-Output ("*:{0}*{1}" -f $latest.Sitecore, $latest.WindowsServerCore)
     Write-Output ("*:{0}*{1}" -f $latest.Sitecore, $latest.NanoServer)
+    Write-Output ("*:{0}*{1}" -f $latest.Redis, $latest.WindowsServerCore)
 }

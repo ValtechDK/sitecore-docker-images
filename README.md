@@ -2,7 +2,7 @@
 
 [//]: # "start: stats"
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](https://opensource.org/licenses/MIT) ![Repositories](https://img.shields.io/badge/Repositories-35-blue.svg?style=flat-square) ![Tags](https://img.shields.io/badge/Tags-90-blue.svg?style=flat-square) ![Deprecated](https://img.shields.io/badge/Deprecated-0-lightgrey.svg?style=flat-square) ![Dockerfiles](https://img.shields.io/badge/Dockerfiles-36-blue.svg?style=flat-square) ![Default version](https://img.shields.io/badge/Default%20version-9.2.0%20on%20ltsc2019/1809-blue?style=flat-square)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](https://opensource.org/licenses/MIT) ![Repositories](https://img.shields.io/badge/Repositories-58-blue.svg?style=flat-square) ![Tags](https://img.shields.io/badge/Tags-198-blue.svg?style=flat-square) ![Deprecated](https://img.shields.io/badge/Deprecated-0-lightgrey.svg?style=flat-square) ![Dockerfiles](https://img.shields.io/badge/Dockerfiles-52-blue.svg?style=flat-square) ![Default version](https://img.shields.io/badge/Default%20version-9.2.0%20on%20ltsc2019/1809-blue?style=flat-square)
 
 [//]: # "end: stats"
 
@@ -61,7 +61,7 @@ This will:
 When completed:
 
 1. Place your Sitecore license file at `C:\license\license.xml`, or override location using the environment variable `LICENSE_PATH` like so: `$env:LICENSE_PATH="D:\my\sitecore\licenses"`
-1. Then run any of the docker-compose files, for example an XM with: `docker-compose --file .\windows\tests\9.x.x\docker-compose.xm.yml up`
+1. Switch directory to `.\windows\tests\9.x.x\` and then run any of the docker-compose files, for example an XM with: `docker-compose --file .\docker-compose.xm.yml up`
 
 ### Setting up automated builds
 
@@ -132,3 +132,27 @@ SitecoreImageBuilder\Invoke-Build `
     -Registry $registry `
     -Tags $tags
 ```
+
+### Optional ENTRYPOINT scripts
+
+For IIS based images (such as the roles `cm`, `standalone` and `cd`) we now have a few scripts that can be used as `ENTRYPOINT` for development and production use.
+
+Using these `ENTRYPOINT` scripts enables you to observe Sitecore log entries in the `STDOUT` of containers in the foreground or by using commands such as `docker container logs` or `docker container attach`.
+
+`C:\tools\entrypoints\iis\Production.ps1` features:
+
+- Adds an UDP appender to all default log4net loggers.
+- Starts `ServiceMonitor.exe` in the background.
+- Starts `filebeat.exe` in the foreground and outputting to `STDOUT`.
+- FileBeat inputs configured:
+  - IIS access logs, **disabled** by default, can be switched using environment variable: `ENTRYPOINT_STDOUT_IIS_ACCESS_LOG_ENABLED=true`
+  - IIS error logs, **disabled** by default, can be switched using environment variable: `ENTRYPOINT_STDOUT_IIS_ERROR_LOG_ENABLED=true`
+  - Sitecore logs, **enabled** by default, can be switched using environment variable: `ENTRYPOINT_STDOUT_SITECORE_LOG_ENABLED=false`
+
+`C:\tools\entrypoints\iis\Development.ps1` features:
+
+- Same as `Production.ps1`.
+- Starts the Visual Studio Remote Debugger `msvsmon.exe` in the background **if** the Visual Studio Remote Debugger directory is mounted into `C:\remote_debugger`.
+- Starts the `Watch-Directory.ps1` script in the background **if** a directory is mounted into `C:\src`.
+
+See the `cm` and `cd` service in [windows/tests/9.x.x/docker-compose.xm.yml](windows/tests/9.x.x/docker-compose.xm.yml) for configuration examples.
