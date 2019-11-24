@@ -23,21 +23,27 @@ function Get-BuildJob
             $matches = $spec.Compatibility.Versions | ForEach-Object {
                 $versionToMatch = $_
 
-                Write-Output ($Blueprints | Where-Object { $_.SitecoreVersion.Name -like $versionToMatch } )
+                Write-Output @($Blueprints | Where-Object { $_.SitecoreVersion.Name -like $versionToMatch } )
             }
 
             # reduces list to compatible topologies
             $matches = $spec.Compatibility.Topologies | ForEach-Object {
                 $topologyToMatch = $_
 
-                Write-Output ($matches | Where-Object { $_.Topology -eq $topologyToMatch.Name } )
+                Write-Output @($matches | Where-Object { $_.Topology -like $topologyToMatch.Name } )
             }
 
             # reduces list to compatible roles
             $matches = $spec.Compatibility.Topologies | ForEach-Object {
                 $topologyToMatch = $_
 
-                Write-Output ($matches | Where-Object { $topologyToMatch.Roles -contains $_.Role } )
+                $topologyToMatch.Roles | ForEach-Object {
+                    $role = $_
+
+                    # TODO: somthing is wrong... getting too many jobs (invalid())
+                    <<<<
+                    Write-Output @($matches | Where-Object { $_.Role -like $role })
+                }
             }
 
             if ($spec.Compatibility.Variants.Length -gt 0)
@@ -46,13 +52,13 @@ function Get-BuildJob
                 $matches = $spec.Compatibility.Variants | ForEach-Object {
                     $variantToMatch = $_
 
-                    Write-Output ($matches | Where-Object { $_.VariantName -eq $variantToMatch } )
+                    Write-Output @($matches | Where-Object { $_.VariantName -like $variantToMatch } )
                 }
             }
             else
             {
                 # reduces list to exclude variants
-                $matches = $matches | Where-Object { $_.Type -ne "variant" }
+                $matches = @($matches | Where-Object { $_.Type -ne "variant" })
             }
 
             # done
@@ -66,7 +72,7 @@ function Get-BuildJob
                         BuildOptions     = @($spec.BuildOptions);
                         Sources          = @($spec.Sources);
                         BaseImages       = @($spec.BaseImages);
-                        Tag              = "$($blueprint.Repository):$($blueprint.SitecoreVersion.Name)-$($blueprint.Platform)";
+                        Tag              = "$($blueprint.Repository):$($blueprint.SitecoreVersion.Name)-$($blueprint.Platform.Name)";
                         Blueprint        = $blueprint
                     })
             }

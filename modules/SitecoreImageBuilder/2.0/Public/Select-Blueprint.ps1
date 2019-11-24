@@ -40,8 +40,6 @@ function Select-Blueprint
         $variants = @($Matrix.Variants)
         $platforms = @($Matrix.Platforms)
 
-        # TODO: handle dependencies, fx sxa-cm required spe-cm that requires cm. Maybe start with ignoring dependencies and resoleve in job
-
         $InputObject | ForEach-Object {
             $blueprint = $_
 
@@ -77,22 +75,21 @@ function Select-Blueprint
                 $matchesTopology = $true
             }
 
-            $matchesVariant = $true
-            # if ($blueprint.Type -eq "variant")
-            # {
-            #     if ($variants.Count -gt 0)
-            #     {
-            #         $matchesVariant = @($variants | Where-Object { $blueprint.VariantName -like "*$_*" }).Count -gt 0
-            #     }
-            #     else
-            #     {
-            #         $matchesVariant = $false
-            #     }
-            # }
-            # else
-            # {
-            #     $matchesVariant = $true
-            # }
+            if ($blueprint.Type -eq "variant")
+            {
+                if ($variants.Count -gt 0)
+                {
+                    $matchesVariant = @($variants | Where-Object { $blueprint.VariantName -like "*$_*" }).Count -gt 0
+                }
+                else
+                {
+                    $matchesVariant = $false
+                }
+            }
+            else
+            {
+                $matchesVariant = $true
+            }
 
             if ($platforms.Count -gt 0)
             {

@@ -16,17 +16,18 @@ function Invoke-Build
         $blueprints = Get-Blueprint -Path (Join-Path $PSScriptRoot "..\..\..\..\sketch.json")
 
         # select blueprints that matches the matrix
-        $blueprints = $blueprints | Select-Blueprint -Matrix $InputObject
+        $selectedBlueprints = $blueprints | Select-Blueprint -Matrix $InputObject
 
-        $blueprints | Sort-Object -Property Type, Repository, SitecoreVersion, Platform, Topology, Role | Format-Table -Property SitecoreVersion, VariantVersion, DependencyVersion, Type, Repository, Topology, Role, Platform
+        $selectedBlueprints | Sort-Object -Property Type, Repository, SitecoreVersion, Platform, Topology, Role | Format-Table -Property SitecoreVersion, VariantVersion, DependencyVersion, Type, Repository, Topology, Role, Platform
 
-        return
 
         # get all specifications
         $specifications = (Join-Path $PSScriptRoot "..\..\..\..\windows"), (Join-Path $PSScriptRoot "..\..\..\..\linux") | Get-BuildSpecification
+        # TODO: Find  dependencies from specifications, load find the blueprints and load the specifications and add them
+        $specifications | Format-Table
 
         # get jobs from combatible specifications
-        $jobs = Get-BuildJob -Blueprints $blueprints -Specifications $specifications
+        $jobs = Get-BuildJob -Blueprints $selectedBlueprints -Specifications $specifications
 
         $jobs | ForEach-Object {
             $job = $_
