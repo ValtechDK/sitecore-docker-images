@@ -60,6 +60,11 @@ stages:
     strategy:
       matrix:
         # 9.3.0
+        sitecore_930_2004:
+          SITECORE_VERSION: '9.3.0'
+          WINDOWS_BUILD: '2004'
+          NANO_BUILD: '2004'
+          OS_VERSION: '10.0.19041'
         sitecore_930_1909:
           SITECORE_VERSION: '9.3.0'
           WINDOWS_BUILD: '1909'
@@ -76,6 +81,11 @@ stages:
           NANO_BUILD: '1809'
           OS_VERSION: '10.0.17763'
         # 9.2.0
+        sitecore_920_2004:
+          SITECORE_VERSION: '9.2.0'
+          WINDOWS_BUILD: '2004'
+          NANO_BUILD: '2004'
+          OS_VERSION: '10.0.19041'
         sitecore_920_1909:
           SITECORE_VERSION: '9.2.0'
           WINDOWS_BUILD: '1909'
@@ -92,6 +102,11 @@ stages:
           NANO_BUILD: '1809'
           OS_VERSION: '10.0.17763'
         # 9.1.1
+        sitecore_911_2004:
+          SITECORE_VERSION: '9.1.1'
+          WINDOWS_BUILD: '2004'
+          NANO_BUILD: '2004'
+          OS_VERSION: '10.0.19041'
         sitecore_911_1909:
           SITECORE_VERSION: '9.1.1'
           WINDOWS_BUILD: '1909'
@@ -108,6 +123,11 @@ stages:
           NANO_BUILD: '1809'
           OS_VERSION: '10.0.17763'
         # 9.0.2
+        sitecore_902_2004:
+          SITECORE_VERSION: '9.0.2'
+          WINDOWS_BUILD: '2004'
+          NANO_BUILD: '2004'
+          OS_VERSION: '10.0.19041'
         sitecore_902_1909:
           SITECORE_VERSION: '9.0.2'
           WINDOWS_BUILD: '1909'
