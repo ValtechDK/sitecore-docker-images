@@ -175,6 +175,7 @@ stages:
         SitecoreImageBuilder\Invoke-PackageRestore -WhatIf:$whatIf -Tags $tags -AutoGenerateWindowsVersionTags @("$(WINDOWS_BUILD)") -Path (Join-Path "$(Build.SourcesDirectory)" "build\windows") -Destination "$(storage.drive):\" -SitecoreUsername $(sitecore.username) -SitecorePassword $(sitecore.password) -Verbose
         SitecoreImageBuilder\Invoke-Build -WhatIf:$whatIf -Tags $tags -AutoGenerateWindowsVersionTags @("$(WINDOWS_BUILD)") -Path (Join-Path "$(Build.SourcesDirectory)" "build\windows") -InstallSourcePath "$(storage.drive):\" -Registry "valtech.azurecr.io" -PushMode $pushMode -IsolationModeBehaviour "EngineDefault" -Verbose
       errorActionPreference: stop
+      workingDirectory: $(Build.SourcesDirectory)/build
       displayName: Build
 
 - stage: linux
@@ -242,4 +243,5 @@ stages:
         SitecoreImageBuilder\Invoke-PackageRestore -WhatIf:$whatIf -Tags $tags -Path (Join-Path "$(Build.SourcesDirectory)" "build\linux") -Destination "$(install.source.path)" -SitecoreUsername $(sitecore.username) -SitecorePassword $(sitecore.password) -Verbose
         SitecoreImageBuilder\Invoke-Build -WhatIf:$whatIf -Tags $tags -Path (Join-Path "$(Build.SourcesDirectory)" "build\linux") -InstallSourcePath "$(install.source.path)" -Registry "valtech.azurecr.io" -PushMode $pushMode -Verbose
       errorActionPreference: stop
+      workingDirectory: $(Build.SourcesDirectory)/build
       displayName: Build
